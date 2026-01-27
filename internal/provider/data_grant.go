@@ -1,0 +1,65 @@
+package provider
+
+import (
+	"context"
+	"errors"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+)
+
+func dataGrant() *schema.Resource {
+	return &schema.Resource{
+		Schema: map[string]*schema.Schema{
+			"grant_id": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "Identifier of the grant to fetch.",
+			},
+			"request_id": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "Identifier of the request that owns the grant.",
+			},
+			"payload": {
+				Type:        schema.TypeString,
+				Computed:    true,
+				Description: "JSON-encoded payload delivered by the grant, if any.",
+			},
+		},
+		ReadContext: dataGrantRead,
+	}
+}
+
+func dataGrantRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
+	client := meta.(*grantoryClient)
+	grantID := d.Get("grant_id").(string)
+
+	var diags diag.Diagnostics
+
+	grant, err := client.getGrant(ctx, grantID)
+	if err != nil {
+		if errors.Is(err, errResourceNotFound) {
+			d.SetId("")
+			return nil
+		}
+		return diag.FromErr(err)
+	}
+
+	if err := d.Set("grant_id", grant.ID); err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+	}
+	if err := d.Set("request_id", grant.RequestID); err != nil {
+		diags = append(diags, diag.FromErr(err)...)
+	}
+
+	payloadBytes := sanitizeGrantPayload(grant.Payload)
+	if len(payloadBytes) > 0 {
+		if err := d.Set("payload", string(payloadBytes)); err != nil {
+			diags = append(diags, diag.FromErr(err)...)
+		}
+	}
+
+	d.SetId(grant.ID)
+	return diags
+}

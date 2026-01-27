@@ -1,0 +1,21 @@
+/dist/
+/.vscode
+.terraform
+.terraform.lock.hcl
+*.tfvars
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate*
+dist/
+*.tfplan
+.gocache
+.cache
+
+# Don't add grantory binary and grantory database directory to git
+/grantory
+data
+inttest/.tempdir
+
+# coverage reports
+*.cover.out
+coverage.out

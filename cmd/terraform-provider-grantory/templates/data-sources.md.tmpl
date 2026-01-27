@@ -1,0 +1,23 @@
+---
+page_title: "{{ .Name }} Data Source - {{ .RenderedProviderName }}"
+subcategory: ""
+description: |-
+  {{- if .Description }}{{ .Description }}{{ else }}Query Grantory state without mutating it.{{ end }}
+---
+
+# {{ .Name }} (Data Source)
+
+{{- if .Description }}
+{{ .Description }}
+{{ else }}
+Use this data source to filter Grantory records inside a Terraform/OpenTofu plan.
+{{ end }}
+
+{{- if .HasExample }}
+## Example
+{{ tffile .ExampleFile }}
+{{ end }}
+
+## Schema
+
+{{ .SchemaMarkdown }}

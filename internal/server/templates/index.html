@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>
+            Grantory{{if ne .Namespace "_def"}} - Namespace
+            {{.Namespace}}{{end}}
+        </title>
+        <link rel="stylesheet" href="/static/water.min.css" />
+    </head>
+    <body>
+        <main>
+            <header>
+                <h1>Grantory</h1>
+                <p class="muted">
+                    Lightweight control plane for loosely coupled terraform
+                    pipelines
+                </p>
+            </header>
+            <section>
+                <h2>
+                    Metrics{{if ne .Namespace "_def"}} for {{.Namespace}}{{end}}
+                </h2>
+                <p class="muted">Summary of stored resources.</p>
+                <table class="striped">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th class="text-right">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Requests with grant</td>
+                            <td class="text-right">{{.RequestsWithGrant}}</td>
+                        </tr>
+                        <tr>
+                            <td>Requests without grant</td>
+                            <td class="text-right">
+                                {{.RequestsWithoutGrant}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Total requests</td>
+                            <td class="text-right">{{.TotalRequests}}</td>
+                        </tr>
+                        <tr>
+                            <td>Grants</td>
+                            <td class="text-right">{{.TotalGrants}}</td>
+                        </tr>
+                        <tr>
+                            <td>Registers</td>
+                            <td class="text-right">{{.TotalRegisters}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            <section>
+                <h2>Hosts</h2>
+                {{if .Hosts}}
+                <table class="striped">
+                    <thead>
+                        <tr>
+                            <th>Host ID</th>
+                            <th>Labels</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Hosts}}
+                        <tr id="host-{{.ID}}">
+                            <td>{{.ID}}</td>
+                            <td>{{labelSummary .Labels}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <p class="muted">No hosts yet.</p>
+                {{end}}
+            </section>
+            <section>
+                <h2>Requests</h2>
+                {{if .Requests}}
+                <table class="striped">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>Host ID</th>
+                            <th>Has Grant</th>
+                            <th>Labels</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Requests}}
+                        <tr id="request-{{.ID}}">
+                            <td>{{.ID}}</td>
+                            <td>
+                                <a href="#host-{{.HostID}}">{{.HostID}}</a>
+                            </td>
+                            <td>{{.HasGrant}}</td>
+                            <td>{{labelSummary .Labels}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <p class="muted">No requests yet.</p>
+                {{end}}
+            </section>
+            <section>
+                <h2>Grants</h2>
+                {{if .Grants}}
+                <table class="striped">
+                    <thead>
+                        <tr>
+                            <th>Grant ID</th>
+                            <th>Request ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Grants}}
+                        <tr id="grant-{{.ID}}">
+                            <td>{{.ID}}</td>
+                            <td>
+                                <a href="#request-{{.RequestID}}"
+                                    >{{.RequestID}}</a
+                                >
+                            </td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <p class="muted">No grants yet.</p>
+                {{end}}
+            </section>
+            <section>
+                <h2>Registers</h2>
+                {{if .Registers}}
+                <table class="striped">
+                    <thead>
+                        <tr>
+                            <th>Register ID</th>
+                            <th>Host ID</th>
+                            <th>Labels</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Registers}}
+                        <tr id="register-{{.ID}}">
+                            <td>{{.ID}}</td>
+                            <td>
+                                <a href="#host-{{.HostID}}">{{.HostID}}</a>
+                            </td>
+                            <td>{{labelSummary .Labels}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <p class="muted">No registers yet.</p>
+                {{end}}
+            </section>
+        </main>
+        <footer>
+            Quick links
+            <ul>
+                <li>
+                    <a href="https://github.com/tasansga/grantory"
+                        >Grantory homepage on GitHub</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="https://search.opentofu.org/provider/tasansga/grantory/latest"
+                        >Grantory provider on OpenTofu Registry</a
+                    >
+                </li>
+                <li>
+                    <a
+                        href="https://registry.terraform.io/providers/tasansga/grantory/latest"
+                        >Grantory provider on Terraform Registry</a
+                    >
+                </li>
+            </ul>
+            <p>
+                UI styling powered by
+                <a href="https://watercss.kognise.dev/">water.css</a>
+            </p>
+        </footer>
+    </body>
+</html>

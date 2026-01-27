@@ -1,0 +1,23 @@
+---
+page_title: "{{ .Name }} Resource - {{ .RenderedProviderName }}"
+subcategory: ""
+description: |-
+  {{- if .Description }}{{ .Description }}{{ else }}Manage {{ .Name }} via Terraform/OpenTofu.{{ end }}
+---
+
+# {{ .Name }} (Resource)
+
+{{- if .Description }}
+{{ .Description }}
+{{ else }}
+Manage the lifecycle of the `{{ .Name }}` resource.
+{{ end }}
+
+{{- if .HasExample }}
+## Example
+{{ tffile .ExampleFile }}
+{{ end }}
+
+## Schema
+
+{{ .SchemaMarkdown }}
