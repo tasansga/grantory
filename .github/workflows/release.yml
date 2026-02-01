@@ -1,10 +1,9 @@
-name: Release
+name: Release terraform provider
 
 on:
   push:
     tags:
       - "v*.*.*"
-      - "cli-v*.*.*"
 
 jobs:
   release:
@@ -23,6 +22,10 @@ jobs:
           go-version: "1.25"
       - name: Tidy modules
         run: go mod tidy
+      - name: Install sqlite3 build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libsqlite3-dev
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v6
         with:
@@ -33,12 +36,7 @@ jobs:
           set -euo pipefail
           RAW_TAG=${GITHUB_REF#refs/tags/}
           TAG_VERSION=${RAW_TAG#v}
-          RELEASE_KIND=provider
           VERSION=$TAG_VERSION
-          if [[ "$RAW_TAG" == cli-v* ]]; then
-            RELEASE_KIND=cli
-            VERSION=${TAG_VERSION}
-          fi
           RELEASE_DIR=release/dist
           rm -rf "$RELEASE_DIR"
           mkdir -p "$RELEASE_DIR"
@@ -63,53 +61,28 @@ jobs:
             else
               unset GOARM
             fi
-            if [[ "$RELEASE_KIND" == "provider" ]]; then
-              bin_name="terraform-provider-grantory_v${VERSION}${bin_ext}"
-              CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -o "$RELEASE_DIR/${bin_name}" ./cmd/terraform-provider-grantory
-              zip -j "$RELEASE_DIR/terraform-provider-grantory_${VERSION}_${os}_${arch}.zip" "$RELEASE_DIR/${bin_name}"
-              rm "$RELEASE_DIR/${bin_name}"
-            else
-              CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -o "$RELEASE_DIR/grantory${bin_ext}" ./cmd/grantory
-              zip -j "$RELEASE_DIR/grantory_${VERSION}_${os}_${arch}.zip" "$RELEASE_DIR/grantory${bin_ext}"
-              rm "$RELEASE_DIR/grantory${bin_ext}"
-            fi
+            bin_name="terraform-provider-grantory_v${VERSION}${bin_ext}"
+            CGO_ENABLED=0 GOOS="$os" GOARCH="$arch" go build -o "$RELEASE_DIR/${bin_name}" ./cmd/terraform-provider-grantory
+            zip -j "$RELEASE_DIR/terraform-provider-grantory_${VERSION}_${os}_${arch}.zip" "$RELEASE_DIR/${bin_name}"
+            rm "$RELEASE_DIR/${bin_name}"
           done
       - name: Create checksum files
         run: |
           set -euo pipefail
           RAW_TAG=${GITHUB_REF#refs/tags/}
           TAG_VERSION=${RAW_TAG#v}
-          RELEASE_KIND=provider
           VERSION=$TAG_VERSION
-          if [[ "$RAW_TAG" == cli-v* ]]; then
-            RELEASE_KIND=cli
-            VERSION=${TAG_VERSION}
-          fi
           cd release/dist
-          if [[ "$RELEASE_KIND" == "provider" ]]; then
-            sha256sum terraform-provider-grantory_${VERSION}_*.zip > terraform-provider-grantory_${VERSION}_SHA256SUMS
-            sha256sum terraform-provider-grantory_${VERSION}_*.zip > checksums_${VERSION}_SHA256SUMS
-          else
-            sha256sum grantory_${VERSION}_*.zip > grantory_${VERSION}_SHA256SUMS
-            sha256sum grantory_${VERSION}_*.zip > checksums_${VERSION}_SHA256SUMS
-          fi
+          sha256sum terraform-provider-grantory_${VERSION}_*.zip > terraform-provider-grantory_${VERSION}_SHA256SUMS
+          sha256sum terraform-provider-grantory_${VERSION}_*.zip > checksums_${VERSION}_SHA256SUMS
       - name: Sign checksum files
         run: |
           set -euo pipefail
           RAW_TAG=${GITHUB_REF#refs/tags/}
           TAG_VERSION=${RAW_TAG#v}
-          RELEASE_KIND=provider
           VERSION=$TAG_VERSION
-          if [[ "$RAW_TAG" == cli-v* ]]; then
-            RELEASE_KIND=cli
-            VERSION=${TAG_VERSION}
-          fi
           cd release/dist
-          if [[ "$RELEASE_KIND" == "provider" ]]; then
-            FILES=(terraform-provider-grantory_${VERSION}_SHA256SUMS checksums_${VERSION}_SHA256SUMS)
-          else
-            FILES=(grantory_${VERSION}_SHA256SUMS checksums_${VERSION}_SHA256SUMS)
-          fi
+          FILES=(terraform-provider-grantory_${VERSION}_SHA256SUMS checksums_${VERSION}_SHA256SUMS)
           for file in "${FILES[@]}"; do
             gpg --batch --yes --detach-sign --output "${file}.sig" "${file}"
           done
