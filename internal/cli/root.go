@@ -75,6 +75,7 @@ func runServer(cmd *cobra.Command, _ []string) error {
 		"tls_cert": cfg.TLSCert,
 		"tls_key":  cfg.TLSKey,
 		"tls":      tlsStatus,
+		"version":  versionString(),
 	}).Info("starting Grantory server")
 
 	srv, err := server.New(ctx, cfg)
