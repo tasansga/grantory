@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - "v*.*.*"
-      - "v*.*.*-cli"
+      - "cli-v*.*.*"
 
 jobs:
   release:
@@ -35,9 +35,9 @@ jobs:
           TAG_VERSION=${RAW_TAG#v}
           RELEASE_KIND=provider
           VERSION=$TAG_VERSION
-          if [[ "$TAG_VERSION" == *-cli ]]; then
+          if [[ "$RAW_TAG" == cli-v* ]]; then
             RELEASE_KIND=cli
-            VERSION=${TAG_VERSION%-cli}
+            VERSION=${TAG_VERSION}
           fi
           RELEASE_DIR=release/dist
           rm -rf "$RELEASE_DIR"
@@ -81,9 +81,9 @@ jobs:
           TAG_VERSION=${RAW_TAG#v}
           RELEASE_KIND=provider
           VERSION=$TAG_VERSION
-          if [[ "$TAG_VERSION" == *-cli ]]; then
+          if [[ "$RAW_TAG" == cli-v* ]]; then
             RELEASE_KIND=cli
-            VERSION=${TAG_VERSION%-cli}
+            VERSION=${TAG_VERSION}
           fi
           cd release/dist
           if [[ "$RELEASE_KIND" == "provider" ]]; then
@@ -100,9 +100,9 @@ jobs:
           TAG_VERSION=${RAW_TAG#v}
           RELEASE_KIND=provider
           VERSION=$TAG_VERSION
-          if [[ "$TAG_VERSION" == *-cli ]]; then
+          if [[ "$RAW_TAG" == cli-v* ]]; then
             RELEASE_KIND=cli
-            VERSION=${TAG_VERSION%-cli}
+            VERSION=${TAG_VERSION}
           fi
           cd release/dist
           if [[ "$RELEASE_KIND" == "provider" ]]; then
