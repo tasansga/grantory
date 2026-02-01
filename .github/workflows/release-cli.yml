@@ -47,7 +47,11 @@ jobs:
           VERSION=$TAG_VERSION
           RELEASE_DIR=release/dist
           mkdir -p "$RELEASE_DIR"
-          CGO_ENABLED=1 GOOS=linux GOARCH="${{ matrix.arch }}" go build -o "$RELEASE_DIR/grantory" ./cmd/grantory
+          COMMIT_SHA=${GITHUB_SHA:0:12}
+          CGO_ENABLED=1 GOOS=linux GOARCH="${{ matrix.arch }}" go build \
+            -ldflags "-X github.com/tasansga/terraform-provider-grantory/internal/cli.Version=${VERSION} -X github.com/tasansga/terraform-provider-grantory/internal/cli.Commit=${COMMIT_SHA}" \
+            -o "$RELEASE_DIR/grantory" \
+            ./cmd/grantory
           zip -j "$RELEASE_DIR/grantory_${VERSION}_linux_${{ matrix.arch }}.zip" "$RELEASE_DIR/grantory"
           rm "$RELEASE_DIR/grantory"
       - name: Upload artifacts

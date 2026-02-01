@@ -24,6 +24,8 @@ func NewRootCommand() *cobra.Command {
 			return cmd.Help()
 		},
 	}
+	root.Version = versionString()
+	root.SetVersionTemplate("{{.Version}}\n")
 
 	config.RegisterFlags(root.PersistentFlags())
 	root.PersistentFlags().String(FlagBackend, string(backendModeDirect), fmt.Sprintf("backend to use (direct|api) (env: %s)", EnvBackend))
@@ -37,6 +39,7 @@ func NewRootCommand() *cobra.Command {
 
 	root.AddCommand(
 		newServeCmd(),
+		newVersionCmd(),
 		newNamespaceCmd(),
 		newListCmd(),
 		newInspectCmd(),
@@ -99,5 +102,15 @@ func newServeCmd() *cobra.Command {
 		Short: "Start the Grantory server",
 		Long:  "Start the HTTP API server that manages hosts, resource requests, and grants.",
 		RunE:  runServer,
+	}
+}
+
+func newVersionCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "Print version information",
+		Run: func(cmd *cobra.Command, _ []string) {
+			fmt.Fprintln(cmd.OutOrStdout(), versionString())
+		},
 	}
 }
