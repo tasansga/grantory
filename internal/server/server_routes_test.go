@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tasansga/grantory/internal/config"
-	"github.com/tasansga/grantory/internal/storage"
+	"github.com/tasansga/terraform-provider-grantory/internal/config"
+	"github.com/tasansga/terraform-provider-grantory/internal/storage"
 )
 
 func newTestApp(t *testing.T) (*fiber.App, func()) {

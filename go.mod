@@ -1,4 +1,4 @@
-module github.com/tasansga/grantory
+module github.com/tasansga/terraform-provider-grantory
 
 go 1.25.5
 

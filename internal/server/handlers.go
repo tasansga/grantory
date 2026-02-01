@@ -14,7 +14,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/sirupsen/logrus"
 
-	"github.com/tasansga/grantory/internal/storage"
+	"github.com/tasansga/terraform-provider-grantory/internal/storage"
 )
 
 func registerHostRoutes(app fiber.Router) {

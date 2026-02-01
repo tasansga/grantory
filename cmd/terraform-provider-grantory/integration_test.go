@@ -20,10 +20,10 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	"github.com/tasansga/grantory/internal/cli"
-	"github.com/tasansga/grantory/internal/config"
-	"github.com/tasansga/grantory/internal/server"
-	"github.com/tasansga/grantory/internal/storage"
+	"github.com/tasansga/terraform-provider-grantory/internal/cli"
+	"github.com/tasansga/terraform-provider-grantory/internal/config"
+	"github.com/tasansga/terraform-provider-grantory/internal/server"
+	"github.com/tasansga/terraform-provider-grantory/internal/storage"
 
 	_ "embed"
 )

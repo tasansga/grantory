@@ -11,8 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/tasansga/grantory/internal/config"
-	"github.com/tasansga/grantory/internal/server"
+	"github.com/tasansga/terraform-provider-grantory/internal/config"
+	"github.com/tasansga/terraform-provider-grantory/internal/server"
 )
 
 func NewRootCommand() *cobra.Command {

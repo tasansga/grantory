@@ -3,7 +3,7 @@
 Grantory implements loose coupling between Terraform/OpenTofu pipelines.
 
 Links:
-- [Homepage](https://github.com/tasansga/grantory)
+- [Homepage](https://github.com/tasansga/terraform-provider-grantory)
 - [OpenTofu registry](https://search.opentofu.org/provider/tasansga/grantory/latest)
 - [terraform registry](https://registry.terraform.io/providers/tasansga/grantory/latest)
 
@@ -53,7 +53,7 @@ provider "grantory" {
 
 ## Regenerating provider docs
 
-The terraform docs under `cmd/terraform-provider-grantory/docs` is generated via `tfplugindocs`.
+The terraform docs under `cmd/terraform-provider-grantory/docs` are generated via `tfplugindocs`.
 Run the generator so it consumes the templates and examples:
 
 ```bash

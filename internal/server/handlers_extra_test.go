@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tasansga/grantory/internal/storage"
+	"github.com/tasansga/terraform-provider-grantory/internal/storage"
 )
 
 func TestStoreFromLocalsVariants(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/tasansga/grantory/internal/cli"
+	"github.com/tasansga/terraform-provider-grantory/internal/cli"
 )
 
 func main() {

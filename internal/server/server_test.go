@@ -9,8 +9,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/tasansga/grantory/internal/config"
-	"github.com/tasansga/grantory/internal/storage"
+	"github.com/tasansga/terraform-provider-grantory/internal/config"
+	"github.com/tasansga/terraform-provider-grantory/internal/storage"
 )
 
 func TestIsTLSEnabled(t *testing.T) {

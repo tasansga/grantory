@@ -11,9 +11,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/tasansga/grantory/internal/config"
-	"github.com/tasansga/grantory/internal/server"
-	"github.com/tasansga/grantory/internal/storage"
+	"github.com/tasansga/terraform-provider-grantory/internal/config"
+	"github.com/tasansga/terraform-provider-grantory/internal/server"
+	"github.com/tasansga/terraform-provider-grantory/internal/storage"
 )
 
 type resourceType string
