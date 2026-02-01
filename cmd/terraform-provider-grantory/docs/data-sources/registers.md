@@ -1,29 +1,12 @@
 ---
 page_title: "grantory_registers Data Source - grantory"
 subcategory: ""
-description: |-Use this data source to filter Grantory register entries inside a Terraform/OpenTofu plan.
+description: |-Query Grantory state without mutating it.
 ---
 
 # grantory_registers (Data Source)
-Use the `grantory_registers` data source to inspect register entries already stored in Grantory.
+Use this data source to filter Grantory records inside a Terraform/OpenTofu plan.
 
-## Example
-```terraform
-data "grantory_registers" "inventory" {
-  labels = {
-    role = "proxy"
-  }
-}
-
-output "registered_items" {
-  value = [
-    for register in data.grantory_registers.inventory.registers : {
-      id      = register.register_id
-      payload = register.payload
-    }
-  ]
-}
-```
 
 ## Schema
 
@@ -36,11 +19,16 @@ output "registered_items" {
 
 ### Read-Only
 
-- `registers` (List of Object) Register entries that matched the supplied filters.
+- `id` (String) The ID of this resource.
+- `registers` (List of Object) Register entries that matched the supplied filters. (see [below for nested schema](#nestedatt--registers))
 
-#### Nested schema for `registers`
+<a id="nestedatt--registers"></a>
+### Nested Schema for `registers`
 
-- `register_id` (String) Identifier for the register entry.
-- `host_id` (String) Host identifier that owns the register entry.
-- `payload` (String) JSON-encoded payload for the register entry.
-- `labels` (Map of String) Labels supplied with the register entry.
+Read-Only:
+
+- `host_id` (String)
+- `register_id` (String)
+
+
+

@@ -29,17 +29,16 @@ data "grantory_requests" "operations" {
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-- `requests` (List of Object) Outstanding requests that matched the supplied filters (see [nested schema](#nestedatt--requests)).
+- `requests` (List of Object) Requests returned by Grantory. (see [below for nested schema](#nestedatt--requests))
 
 <a id="nestedatt--requests"></a>
 ### Nested Schema for `requests`
 
 Read-Only:
 
-- `request_id` (String) Server identifier for the request.
-- `host_id` (String) Host that owns the request.
-- `payload` (String) JSON-encoded payload provided when the request was created.
-- `labels` (Map of String) Labels attached to the request.
-- `has_grant` (Boolean) Indicates whether a grant has been issued for the request.
-- `grant_id` (String) Identifier of the granted resource, if any.
-- `grant_payload` (String) JSON-encoded payload that accompanied the grant.
+- `has_grant` (Boolean)
+- `host_id` (String)
+- `request_id` (String)
+
+
+

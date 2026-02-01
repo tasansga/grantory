@@ -9,7 +9,9 @@ Use this data source to filter Grantory records inside a Terraform/OpenTofu plan
 
 ## Example
 ```terraform
-data "grantory_grants" "all" {}
+data "grantory_grants" "host" {
+  host_id = "app01"
+}
 ```
 
 
@@ -20,11 +22,16 @@ data "grantory_grants" "all" {}
 
 ### Read-Only
 
-- `grants` (List of Object) Grants stored in Grantory (see below for nested schema).
-- `id` (String) SHA256 hex of the JSON-encoded grant list, so the data source refreshes when the set changes.
+- `grants` (List of Object) Grants stored in Grantory, one entry per ID. (see [below for nested schema](#nestedatt--grants))
+- `id` (String) The ID of this resource.
 
-#### Nested schema for `grants`
+<a id="nestedatt--grants"></a>
+### Nested Schema for `grants`
+
+Read-Only:
 
 - `grant_id` (String)
 - `request_id` (String)
-- `payload` (String) JSON-encoded payload delivered by the grant.
+
+
+

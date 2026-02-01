@@ -5,7 +5,7 @@ description: |-Manage Grantory hosts, requests, registers, and grants in Terrafo
 ---
 
 # grantory Provider
-Grantory lets separate teams push requests and reconcile approvals through Terraform/OpenTofu without sharing stateful code.
+Grantory lets teams push requests and approvals through Terraform/OpenTofu, loosely coupled without having to wire in various terraform remote states.
 
 
 ## Quick start
@@ -28,7 +28,7 @@ provider "grantory" {
 
 - **Hosts** register labels and become the target for requests.
 - **Requests** capture declarative work orders that can be filtered or listed.
-- **Registers** store lightweight metadata or state that can be read without granting additional work.
+- **Registers** capture lightweight metadata or state that should be stored without producing a grant.
 - **Grants** approve a request and can carry additional response data such as credentials.
 - **Data sources** exist for hosts, requests, grants, and registers so you can inspect outstanding work without creating new state.
 
@@ -40,3 +40,11 @@ provider "grantory" {
 ### Required
 
 - `server` (String) URL of the Grantory server (http:// or https://) used for every API interaction.
+
+### Optional
+
+- `password` (String, Sensitive) Password for basic auth (env: PASSWORD).
+- `token` (String, Sensitive) Bearer token for API requests (env: TOKEN).
+- `user` (String) Username for basic auth (env: USER).
+
+

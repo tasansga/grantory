@@ -34,12 +34,14 @@ resource "grantory_request" "database" {
 
 ### Optional
 
-- `payload` (String) JSON-encoded payload that describes the requested resource.
 - `labels` (Map of String) Optional labels that tag the request.
+- `payload` (String) JSON-encoded payload that describes the requested resource.
 
 ### Read-Only
 
-- `has_grant` (Boolean) Indicates whether a grant has been issued.
 - `grant_id` (String) Identifier reported by the Grantory server for the applied grant.
-- `grant_payload` (String) Optional JSON-encoded payload returned by the grant.
+- `grant_payload` (String) JSON-encoded payload delivered by the grant, if any.
+- `has_grant` (Boolean) Indicates whether the server has created a matching grant.
 - `id` (String) The ID of this resource.
+
+
