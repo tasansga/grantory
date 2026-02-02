@@ -1,3 +1,5 @@
 data "grantory_hosts" "app" {
-  host_id = "app01"
+  labels = {
+    env = "prod"
+  }
 }

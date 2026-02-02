@@ -1,3 +1,1 @@
-data "grantory_grants" "host" {
-  host_id = "app01"
-}
+data "grantory_grants" "all" {}

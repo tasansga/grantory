@@ -57,10 +57,12 @@ The terraform docs under `docs` are generated via `tfplugindocs`.
 Run the generator so it consumes the templates and examples:
 
 ```bash
-tfplugindocs generate \
+rm -Rf "$(git rev-parse --show-toplevel)/docs" \
+&& tfplugindocs generate \
   --provider-dir cmd/terraform-provider-grantory \
   --provider-name grantory \
-  --rendered-website-dir docs
+  --rendered-website-dir docs \
+&& mv cmd/terraform-provider-grantory/docs "$(git rev-parse --show-toplevel)"
 ```
 
 ## Running the server

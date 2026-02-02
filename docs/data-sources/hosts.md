@@ -10,7 +10,9 @@ Use this data source to filter Grantory records inside a Terraform/OpenTofu plan
 ## Example
 ```terraform
 data "grantory_hosts" "app" {
-  host_id = "app01"
+  labels = {
+    env = "prod"
+  }
 }
 ```
 
