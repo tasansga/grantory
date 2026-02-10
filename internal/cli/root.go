@@ -71,7 +71,8 @@ func runServer(cmd *cobra.Command, _ []string) error {
 	}
 	logrus.WithFields(logrus.Fields{
 		"data_dir": absDataDir,
-		"bind":     cfg.BindAddr,
+		"http_bind":  cfg.BindAddr,
+		"https_bind": cfg.TLSBind,
 		"tls_cert": cfg.TLSCert,
 		"tls_key":  cfg.TLSKey,
 		"tls":      tlsStatus,

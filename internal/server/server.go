@@ -61,7 +61,26 @@ func (s *Server) Serve(ctx context.Context) error {
 	}()
 
 	if IsTLSEnabled(s.cfg) {
-		return app.ListenTLS(s.cfg.BindAddr, s.cfg.TLSCert, s.cfg.TLSKey)
+		if s.cfg.TLSBind == "" {
+			return fmt.Errorf("https bind address must be configured when TLS is enabled")
+		}
+		if s.cfg.TLSBind == s.cfg.BindAddr {
+			return fmt.Errorf("https bind address must differ from http bind address")
+		}
+
+		errCh := make(chan error, 2)
+		go func() {
+			errCh <- app.Listen(s.cfg.BindAddr)
+		}()
+		go func() {
+			errCh <- app.ListenTLS(s.cfg.TLSBind, s.cfg.TLSCert, s.cfg.TLSKey)
+		}()
+
+		err := <-errCh
+		if err != nil {
+			_ = app.Shutdown()
+		}
+		return err
 	}
 
 	return app.Listen(s.cfg.BindAddr)

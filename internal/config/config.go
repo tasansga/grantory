@@ -10,7 +10,8 @@ import (
 
 const (
 	EnvDataDir  = "DATA_DIR"
-	EnvBindAddr = "BIND"
+	EnvBindAddr = "HTTP_BIND"
+	EnvTLSBind  = "HTTPS_BIND"
 	EnvTLSCert  = "TLS_CERT"
 	EnvTLSKey   = "TLS_KEY"
 	EnvLogLevel = "LOG_LEVEL"
@@ -19,6 +20,7 @@ const (
 const (
 	DefaultDataDir  = "data"
 	DefaultBindAddr = "0.0.0.0:8080"
+	DefaultTLSBind  = "0.0.0.0:8443"
 )
 
 const DefaultLogLevel = logrus.InfoLevel
@@ -27,6 +29,7 @@ const DefaultLogLevel = logrus.InfoLevel
 type Config struct {
 	DataDir  string
 	BindAddr string
+	TLSBind  string
 	TLSCert  string
 	TLSKey   string
 	LogLevel logrus.Level
@@ -35,7 +38,8 @@ type Config struct {
 // RegisterFlags adds command-line flags to the provided FlagSet.
 func RegisterFlags(fs *pflag.FlagSet) {
 	fs.String("data-dir", "", "path to the directory that contains namespace databases (env: "+EnvDataDir+")")
-	fs.String("bind", "", "interface:port for the HTTP listener (env: "+EnvBindAddr+")")
+	fs.String("http-bind", "", "interface:port for the HTTP listener (env: "+EnvBindAddr+")")
+	fs.String("https-bind", "", "interface:port for the HTTPS listener when TLS is enabled (env: "+EnvTLSBind+")")
 	fs.String("tls-cert", "", "path to the TLS certificate file (env: "+EnvTLSCert+")")
 	fs.String("tls-key", "", "path to the TLS private key file (env: "+EnvTLSKey+")")
 	fs.String("log-level", "", "log level for the server (env: "+EnvLogLevel+")")
@@ -44,7 +48,8 @@ func RegisterFlags(fs *pflag.FlagSet) {
 // FromFlagSet builds a Config from the flag set and environment variables.
 func FromFlagSet(fs *pflag.FlagSet) (Config, error) {
 	dataDir := stringValue(fs, "data-dir", EnvDataDir, DefaultDataDir)
-	bind := stringValue(fs, "bind", EnvBindAddr, DefaultBindAddr)
+	bind := stringValue(fs, "http-bind", EnvBindAddr, DefaultBindAddr)
+	tlsBind := stringValue(fs, "https-bind", EnvTLSBind, DefaultTLSBind)
 	tlsCert := stringValue(fs, "tls-cert", EnvTLSCert, "")
 	tlsKey := stringValue(fs, "tls-key", EnvTLSKey, "")
 
@@ -57,6 +62,7 @@ func FromFlagSet(fs *pflag.FlagSet) (Config, error) {
 	return Config{
 		DataDir:  dataDir,
 		BindAddr: bind,
+		TLSBind:  tlsBind,
 		TLSCert:  tlsCert,
 		TLSKey:   tlsKey,
 		LogLevel: level,

@@ -67,12 +67,21 @@ rm -Rf "$(git rev-parse --show-toplevel)/docs" \
 
 ## Running the server
 
-Grantory runs as a single HTTP service. Configure the data directory, bind address, TLS
-certificates, and log level via flags or the matching environment variables (`DATA_DIR`,
-`BIND`, `TLS_CERT`, `TLS_KEY`, `LOG_LEVEL`).
+Grantory runs as a single HTTP service. Configure the data directory, HTTP/HTTPS bind addresses,
+TLS certificates, and log level via flags or the matching environment variables
+(`DATA_DIR`, `HTTP_BIND`, `HTTPS_BIND`, `TLS_CERT`, `TLS_KEY`, `LOG_LEVEL`).
 
 ```bash
-grantory --data-dir ./data --bind 127.0.0.1:8080
+grantory --data-dir ./data --http-bind 127.0.0.1:8080
+```
+
+Defaults: `HTTP_BIND=0.0.0.0:8080`, `HTTPS_BIND=0.0.0.0:8443`.
+
+When TLS is enabled, the server listens on both HTTP and HTTPS using those addresses.
+`HTTPS_BIND` is only evaluated when `TLS_CERT` and `TLS_KEY` are set.
+
+```bash
+grantory --http-bind 127.0.0.1:8080 --https-bind 127.0.0.1:8443 --tls-cert ./cert.pem --tls-key ./key.pem
 ```
 
 ## CLI (emergency/inspection helper)
