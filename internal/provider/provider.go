@@ -28,8 +28,9 @@ func New() *schema.Provider {
 		Schema: map[string]*schema.Schema{
 			serverAttr: {
 				Type:        schema.TypeString,
-				Required:    true,
-				Description: "URL of the Grantory server (http:// or https://) used for every API interaction.",
+				Optional:    true,
+				Default:     "http://localhost:8080",
+				Description: "URL of the Grantory server (http:// or https://) used for every API interaction. (default: http://localhost:8080)",
 			},
 			tokenAttr: {
 				Type:        schema.TypeString,
