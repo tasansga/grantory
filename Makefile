@@ -31,7 +31,10 @@ doc:
 	  --rendered-website-dir docs \
 	&& mv cmd/terraform-provider-grantory/docs "$(shell git rev-parse --show-toplevel)"
 
-test: build unittest
+test: build unittest inttest
+
+inttest:
+	./inttest/test.sh
 
 unittest:
 	go test -v ./internal/...
@@ -40,6 +43,5 @@ clean:
 	go clean
 	go mod tidy
 	rm -f "${DIST_DIR}/terraform-provider-grantory"
-	rm -Rf ./docs
 
 .PHONY: all build lint modupdate tidy doc test unittest clean
