@@ -30,6 +30,3 @@ Read-Only:
 
 - `grant_id` (String)
 - `request_id` (String)
-
-
-

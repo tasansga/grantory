@@ -43,5 +43,3 @@ resource "grantory_request" "database" {
 - `grant_payload` (String) JSON-encoded payload delivered by the grant, if any.
 - `has_grant` (Boolean) Indicates whether the server has created a matching grant.
 - `id` (String) The ID of this resource.
-
-

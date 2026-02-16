@@ -29,6 +29,3 @@ Read-Only:
 
 - `host_id` (String)
 - `register_id` (String)
-
-
-

@@ -26,5 +26,3 @@ Use this data source to filter Grantory records inside a Terraform/OpenTofu plan
 
 - `host_id` (String) Host identifier that owns the register entry.
 - `id` (String) The ID of this resource.
-
-

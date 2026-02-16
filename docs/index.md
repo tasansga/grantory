@@ -43,5 +43,3 @@ provider "grantory" {
 - `server` (String) URL of the Grantory server (http:// or https://) used for every API interaction. (default: http://localhost:8080)
 - `token` (String, Sensitive) Bearer token for API requests (env: TOKEN).
 - `user` (String) Username for basic auth (env: USER).
-
-

@@ -22,5 +22,3 @@ Use this data source to filter Grantory records inside a Terraform/OpenTofu plan
 - `id` (String) The ID of this resource.
 - `payload` (String) JSON-encoded payload delivered by the grant, if any.
 - `request_id` (String) Identifier of the request that owns the grant.
-
-

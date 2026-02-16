@@ -25,5 +25,3 @@ Manage the lifecycle of the `grantory_register` resource.
 ### Read-Only
 
 - `id` (String) The ID of this resource.
-
-

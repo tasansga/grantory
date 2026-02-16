@@ -39,6 +39,3 @@ Read-Only:
 - `has_grant` (Boolean)
 - `host_id` (String)
 - `request_id` (String)
-
-
-

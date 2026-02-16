@@ -30,5 +30,3 @@ resource "grantory_host" "app" {
 
 - `host_id` (String) Server-generated identifier for the host.
 - `id` (String) The ID of this resource.
-
-

@@ -30,5 +30,3 @@ data "grantory_hosts" "app" {
 
 - `hosts` (List of String) List of registered host IDs.
 - `id` (String) The ID of this resource.
-
-
