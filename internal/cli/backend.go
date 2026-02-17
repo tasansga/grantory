@@ -30,6 +30,8 @@ type cliBackend interface {
 	DeleteRegister(context.Context, string) error
 	DeleteGrant(context.Context, string) error
 	UpdateHostLabels(context.Context, string, map[string]string) error
+	UpdateRequestLabels(context.Context, string, map[string]string) error
+	UpdateRegisterLabels(context.Context, string, map[string]string) error
 }
 
 type backendConfig struct {
@@ -187,6 +189,14 @@ func (d *directBackend) UpdateHostLabels(ctx context.Context, id string, labels 
 	return d.store.UpdateHostLabels(ctx, id, labels)
 }
 
+func (d *directBackend) UpdateRequestLabels(ctx context.Context, id string, labels map[string]string) error {
+	return d.store.UpdateRequestLabels(ctx, id, labels)
+}
+
+func (d *directBackend) UpdateRegisterLabels(ctx context.Context, id string, labels map[string]string) error {
+	return d.store.UpdateRegisterLabels(ctx, id, labels)
+}
+
 func newAPIBackend(namespace, rawURL, token, user, password string) (cliBackend, error) {
 	if strings.TrimSpace(rawURL) == "" {
 		return nil, fmt.Errorf("server URL is required for API backend")
@@ -320,6 +330,14 @@ func (a *apiBackend) DeleteGrant(ctx context.Context, id string) error {
 //go:noinline
 func (a *apiBackend) UpdateHostLabels(ctx context.Context, id string, labels map[string]string) error {
 	return a.doJSON(ctx, http.MethodPatch, fmt.Sprintf("/hosts/%s/labels", id), labelsPayload{Labels: labels}, nil)
+}
+
+func (a *apiBackend) UpdateRequestLabels(ctx context.Context, id string, labels map[string]string) error {
+	return a.doJSON(ctx, http.MethodPatch, fmt.Sprintf("/requests/%s", id), labelsPayload{Labels: labels}, nil)
+}
+
+func (a *apiBackend) UpdateRegisterLabels(ctx context.Context, id string, labels map[string]string) error {
+	return a.doJSON(ctx, http.MethodPatch, fmt.Sprintf("/registers/%s", id), labelsPayload{Labels: labels}, nil)
 }
 
 func (a *apiBackend) doJSON(ctx context.Context, method, endpoint string, body any, resp any) error {

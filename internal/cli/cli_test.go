@@ -137,6 +137,76 @@ func TestMutateHostLabelsFromStdin(t *testing.T) {
 	assert.Equal(t, "stdin", host.Labels["env"], "host labels from stdin")
 }
 
+func TestMutateRequestLabelsCommand(t *testing.T) {
+	t.Parallel()
+
+	var requestID string
+	dataDir := prepareTestDataDir(t, func(ctx context.Context, store *storage.Store) {
+		host, err := store.CreateHost(ctx, storage.Host{})
+		assert.NoError(t, err, "failed to create host for request CLI test")
+
+		created, err := store.CreateRequest(ctx, storage.Request{
+			HostID: host.ID,
+			Labels: map[string]string{
+				"env": "test",
+			},
+		})
+		assert.NoError(t, err, "failed to create request for CLI test")
+		requestID = created.ID
+	})
+
+	cmd := NewRootCommand()
+	cmd.SetArgs([]string{
+		"--data-dir", dataDir,
+		"mutate", "requests", requestID,
+		"--labels", `{"env":"prod"}`,
+	})
+	err := cmd.Execute()
+	assert.NoError(t, err, "mutate request labels command failed")
+
+	store := openStoreForTesting(t, dataDir)
+	defer closeStore(t, store)
+
+	req, err := store.GetRequest(context.Background(), requestID)
+	assert.NoError(t, err, "GetRequest() error")
+	assert.Equal(t, "prod", req.Labels["env"], "request env labels after mutate via CLI")
+}
+
+func TestMutateRegisterLabelsCommand(t *testing.T) {
+	t.Parallel()
+
+	var registerID string
+	dataDir := prepareTestDataDir(t, func(ctx context.Context, store *storage.Store) {
+		host, err := store.CreateHost(ctx, storage.Host{})
+		assert.NoError(t, err, "failed to create host for register CLI test")
+
+		created, err := store.CreateRegister(ctx, storage.Register{
+			HostID: host.ID,
+			Labels: map[string]string{
+				"env": "test",
+			},
+		})
+		assert.NoError(t, err, "failed to create register for CLI test")
+		registerID = created.ID
+	})
+
+	cmd := NewRootCommand()
+	cmd.SetArgs([]string{
+		"--data-dir", dataDir,
+		"mutate", "registers", registerID,
+		"--labels", `{"env":"prod"}`,
+	})
+	err := cmd.Execute()
+	assert.NoError(t, err, "mutate register labels command failed")
+
+	store := openStoreForTesting(t, dataDir)
+	defer closeStore(t, store)
+
+	reg, err := store.GetRegister(context.Background(), registerID)
+	assert.NoError(t, err, "GetRegister() error")
+	assert.Equal(t, "prod", reg.Labels["env"], "register env labels after mutate via CLI")
+}
+
 func TestNamespaceFlagTargetsNamespace(t *testing.T) {
 	t.Parallel()
 

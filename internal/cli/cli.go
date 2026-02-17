@@ -129,7 +129,7 @@ func newListCmd() *cobra.Command {
 func newInspectCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "inspect <resource_type> <id>",
-		Short: "Show a single host, request, or grant",
+		Short: "Show a single host, request, register, or grant",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resType, err := parseResourceType(args[0])
@@ -152,7 +152,7 @@ func newInspectCmd() *cobra.Command {
 func newDeleteCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete <resource_type> <id>",
-		Short: "Delete a host, request, or grant",
+		Short: "Delete a host, request, register, or grant",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resType, err := parseResourceType(args[0])
@@ -191,7 +191,7 @@ func newDeleteCmd() *cobra.Command {
 func newMutateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "mutate <resource_type> <id>",
-		Short: "Mutate host labels",
+		Short: "Mutate host, request, or register labels",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			resType, err := parseResourceType(args[0])
@@ -213,24 +213,32 @@ func newMutateCmd() *cobra.Command {
 				return fmt.Errorf("mutate only supports hosts")
 			}
 			if labelsFlag == "" && labelsFile == "" {
-				return errors.New("either --labels or --labels-file is required when mutating hosts")
+				return errors.New("either --labels or --labels-file is required when mutating labels")
 			}
 			if labelsFlag != "" && labelsFile != "" {
 				return errors.New("only one of --labels or --labels-file may be provided")
 			}
 
 			return runWithBackend(cmd, func(ctx context.Context, backend cliBackend) error {
+				labels, err := resolveLabels(cmd, labelsFlag, labelsFile)
+				if err != nil {
+					return err
+				}
 				switch resType {
 				case resourceTypeHosts:
-					labels, err := resolveLabels(cmd, labelsFlag, labelsFile)
-					if err != nil {
-						return err
-					}
 					if err := backend.UpdateHostLabels(ctx, id, labels); err != nil {
 						return err
 					}
+				case resourceTypeRequests:
+					if err := backend.UpdateRequestLabels(ctx, id, labels); err != nil {
+						return err
+					}
+				case resourceTypeRegisters:
+					if err := backend.UpdateRegisterLabels(ctx, id, labels); err != nil {
+						return err
+					}
 				default:
-					return fmt.Errorf("unsupported resource type: %s", resType)
+					return fmt.Errorf("mutate does not support resource type: %s", resType)
 				}
 
 				updated, err := fetchResource(ctx, backend, resType, id)
@@ -243,8 +251,8 @@ func newMutateCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String("labels", "", "JSON object that replaces a host's labels")
-	cmd.Flags().String("labels-file", "", "path to a JSON file (or - for STDIN) that replaces a host's labels")
+	cmd.Flags().String("labels", "", "JSON object that replaces labels")
+	cmd.Flags().String("labels-file", "", "path to a JSON file (or - for STDIN) that replaces labels")
 
 	return cmd
 }
