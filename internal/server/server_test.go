@@ -86,12 +86,12 @@ func TestApplyRequestFilters(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		filters requestListFilters
+		filters storage.RequestListFilters
 		wantIDs []string
 	}{
 		{
 			name: "filter by state and label",
-			filters: requestListFilters{
+			filters: storage.RequestListFilters{
 				HasGrant: ptrBool(false),
 				Labels: map[string]string{
 					"env": "prod",
@@ -101,7 +101,7 @@ func TestApplyRequestFilters(t *testing.T) {
 		},
 		{
 			name: "state only",
-			filters: requestListFilters{
+			filters: storage.RequestListFilters{
 				HasGrant: ptrBool(false),
 			},
 			wantIDs: []string{"req-postgres", "req-mysql"},

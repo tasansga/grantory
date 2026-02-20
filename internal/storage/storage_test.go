@@ -323,7 +323,7 @@ func TestRequestCRUD(t *testing.T) {
 	}
 	assert.True(t, afterGrant.HasGrant, "request should reflect existing grant")
 
-	requests, err := store.ListRequests(ctx)
+	requests, err := store.ListRequests(ctx, nil)
 	if err != nil {
 		assert.NoError(t, err, "ListRequests() error")
 		t.FailNow()
@@ -386,7 +386,7 @@ func TestRegisterCRUD(t *testing.T) {
 	assert.Equal(t, register.HostID, loaded.HostID, "loaded register host ID")
 	assert.Equal(t, "10.0.0.1", loaded.Payload["ip"], "loaded register data")
 
-	registers, err := store.ListRegisters(ctx)
+	registers, err := store.ListRegisters(ctx, nil)
 	if err != nil {
 		assert.NoError(t, err, "ListRegisters() error")
 		t.FailNow()
@@ -411,6 +411,106 @@ func TestRegisterCRUD(t *testing.T) {
 	}
 	_, err = store.GetRegister(ctx, createdReg.ID)
 	assert.ErrorIs(t, err, ErrRegisterNotFound, "expected register to be deleted")
+}
+
+func TestListRequestsWithFilters(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	store, err := New(ctx, ":memory:")
+	require.NoError(t, err, "New() error")
+	defer closeStore(t, store)
+
+	require.NoError(t, store.Migrate(ctx), "Migrate() error")
+
+	host, err := store.CreateHost(ctx, Host{})
+	require.NoError(t, err, "CreateHost() error")
+
+	reqA, err := store.CreateRequest(ctx, Request{
+		HostID: host.ID,
+		Labels: map[string]string{"env": "prod", "team": "ops"},
+	})
+	require.NoError(t, err, "CreateRequest() error")
+
+	reqB, err := store.CreateRequest(ctx, Request{
+		HostID: host.ID,
+		Labels: map[string]string{"env": "prod", "team": "dev"},
+	})
+	require.NoError(t, err, "CreateRequest() error")
+
+	_, err = store.CreateGrant(ctx, Grant{RequestID: reqA.ID})
+	require.NoError(t, err, "CreateGrant() error")
+
+	withGrant, err := store.ListRequests(ctx, &RequestListFilters{HasGrant: ptrBool(true)})
+	require.NoError(t, err, "ListRequests() error")
+	assert.Len(t, withGrant, 1, "has_grant filter should return one request")
+	assert.Equal(t, reqA.ID, withGrant[0].ID, "has_grant filter should return granted request")
+
+	withoutGrant, err := store.ListRequests(ctx, &RequestListFilters{HasGrant: ptrBool(false)})
+	require.NoError(t, err, "ListRequests() error")
+	assert.Len(t, withoutGrant, 1, "has_grant=false filter should return one request")
+	assert.Equal(t, reqB.ID, withoutGrant[0].ID, "has_grant=false filter should return ungranted request")
+
+	envFilter, err := store.ListRequests(ctx, &RequestListFilters{Labels: map[string]string{"env": "prod"}})
+	require.NoError(t, err, "ListRequests() error")
+	assert.Len(t, envFilter, 2, "env filter should return both requests")
+
+	multiLabel, err := store.ListRequests(ctx, &RequestListFilters{Labels: map[string]string{"env": "prod", "team": "ops"}})
+	require.NoError(t, err, "ListRequests() error")
+	assert.Len(t, multiLabel, 1, "multi-label filter should return only matching request")
+	assert.Equal(t, reqA.ID, multiLabel[0].ID, "multi-label filter should return ops request")
+
+	mismatch, err := store.ListRequests(ctx, &RequestListFilters{Labels: map[string]string{"env": "prod", "team": "missing"}})
+	require.NoError(t, err, "ListRequests() error")
+	assert.Len(t, mismatch, 0, "multi-label filter should exclude non-matching requests")
+
+	unfiltered, err := store.ListRequests(ctx, &RequestListFilters{})
+	require.NoError(t, err, "ListRequests() error")
+	assert.Len(t, unfiltered, 2, "empty filters should return all requests")
+}
+
+func TestListRegistersWithFilters(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	store, err := New(ctx, ":memory:")
+	require.NoError(t, err, "New() error")
+	defer closeStore(t, store)
+
+	require.NoError(t, store.Migrate(ctx), "Migrate() error")
+
+	host, err := store.CreateHost(ctx, Host{})
+	require.NoError(t, err, "CreateHost() error")
+
+	regA, err := store.CreateRegister(ctx, Register{
+		HostID: host.ID,
+		Labels: map[string]string{"env": "prod", "role": "db"},
+	})
+	require.NoError(t, err, "CreateRegister() error")
+
+	regB, err := store.CreateRegister(ctx, Register{
+		HostID: host.ID,
+		Labels: map[string]string{"env": "prod", "role": "cache"},
+	})
+	require.NoError(t, err, "CreateRegister() error")
+
+	envFilter, err := store.ListRegisters(ctx, &RegisterListFilters{Labels: map[string]string{"env": "prod"}})
+	require.NoError(t, err, "ListRegisters() error")
+	assert.Len(t, envFilter, 2, "env filter should return both registers")
+
+	multiLabel, err := store.ListRegisters(ctx, &RegisterListFilters{Labels: map[string]string{"env": "prod", "role": "db"}})
+	require.NoError(t, err, "ListRegisters() error")
+	assert.Len(t, multiLabel, 1, "multi-label filter should return only matching register")
+	assert.Equal(t, regA.ID, multiLabel[0].ID, "multi-label filter should return db register")
+
+	mismatch, err := store.ListRegisters(ctx, &RegisterListFilters{Labels: map[string]string{"env": "prod", "role": "missing"}})
+	require.NoError(t, err, "ListRegisters() error")
+	assert.Len(t, mismatch, 0, "multi-label filter should exclude non-matching registers")
+	assert.NotEqual(t, regB.ID, regA.ID, "sanity check register ids differ")
+
+	unfiltered, err := store.ListRegisters(ctx, &RegisterListFilters{})
+	require.NoError(t, err, "ListRegisters() error")
+	assert.Len(t, unfiltered, 2, "empty filters should return all registers")
 }
 
 func TestUpdateRequestLabelsRefreshesTimestamp(t *testing.T) {
@@ -475,6 +575,10 @@ func TestUpdateRegisterLabelsRefreshesTimestamp(t *testing.T) {
 	updated, err := store.GetRegister(ctx, createdReg.ID)
 	require.NoError(t, err, "GetRegister() error")
 	assert.True(t, updated.UpdatedAt.After(originalUpdated), "updated_at should advance when labels change")
+}
+
+func ptrBool(v bool) *bool {
+	return &v
 }
 
 func TestCountRegisters(t *testing.T) {
@@ -904,9 +1008,9 @@ func TestOperationsAfterCloseAlwaysError(t *testing.T) {
 
 	_, err = store.ListHosts(ctx)
 	assert.Error(t, err)
-	_, err = store.ListRequests(ctx)
+	_, err = store.ListRequests(ctx, nil)
 	assert.Error(t, err)
-	_, err = store.ListRegisters(ctx)
+	_, err = store.ListRegisters(ctx, nil)
 	assert.Error(t, err)
 	_, err = store.ListGrants(ctx)
 	assert.Error(t, err)
@@ -1141,9 +1245,9 @@ func TestStorageOperationsErrorWhenDBClosed(t *testing.T) {
 
 	_, err = store.ListHosts(ctx)
 	assert.Error(t, err)
-	_, err = store.ListRequests(ctx)
+	_, err = store.ListRequests(ctx, nil)
 	assert.Error(t, err)
-	_, err = store.ListRegisters(ctx)
+	_, err = store.ListRegisters(ctx, nil)
 	assert.Error(t, err)
 	_, err = store.ListGrants(ctx)
 	assert.Error(t, err)

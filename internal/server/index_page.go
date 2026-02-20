@@ -71,13 +71,13 @@ func (s *Server) handleIndex(c *fiber.Ctx) error {
 		return fiber.NewError(http.StatusInternalServerError, "unable to list hosts")
 	}
 
-	requests, err := store.ListRequests(c.Context())
+	requests, err := store.ListRequests(c.Context(), nil)
 	if err != nil {
 		logrus.WithError(err).WithField("namespace", namespace).Error("list requests for index")
 		return fiber.NewError(http.StatusInternalServerError, "unable to list requests")
 	}
 
-	registers, err := store.ListRegisters(c.Context())
+	registers, err := store.ListRegisters(c.Context(), nil)
 	if err != nil {
 		logrus.WithError(err).WithField("namespace", namespace).Error("list registers for index")
 		return fiber.NewError(http.StatusInternalServerError, "unable to list registers")

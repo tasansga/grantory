@@ -582,10 +582,10 @@ func TestDirectBackendMethods(t *testing.T) {
 	if _, err := backend.ListHosts(ctx); err != nil {
 		t.Fatalf("list hosts: %v", err)
 	}
-	if _, err := backend.ListRequests(ctx); err != nil {
+	if _, err := backend.ListRequests(ctx, nil); err != nil {
 		t.Fatalf("list requests: %v", err)
 	}
-	if _, err := backend.ListRegisters(ctx); err != nil {
+	if _, err := backend.ListRegisters(ctx, nil); err != nil {
 		t.Fatalf("list registers: %v", err)
 	}
 	if _, err := backend.ListGrants(ctx); err != nil {
@@ -699,10 +699,10 @@ func TestAPIBackendMethods(t *testing.T) {
 	if _, err := backend.ListHosts(ctx); err != nil {
 		t.Fatalf("api list hosts: %v", err)
 	}
-	if _, err := backend.ListRequests(ctx); err != nil {
+	if _, err := backend.ListRequests(ctx, nil); err != nil {
 		t.Fatalf("api list requests: %v", err)
 	}
-	if _, err := backend.ListRegisters(ctx); err != nil {
+	if _, err := backend.ListRegisters(ctx, nil); err != nil {
 		t.Fatalf("api list registers: %v", err)
 	}
 	if _, err := backend.ListGrants(ctx); err != nil {

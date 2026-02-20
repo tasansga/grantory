@@ -286,15 +286,14 @@ func (h requestHandler) list(c *fiber.Ctx) error {
 		return err
 	}
 
-	requests, err := store.ListRequests(c.Context())
+	requests, err := store.ListRequests(c.Context(), &filters)
 	if err != nil {
 		logrus.WithError(err).WithField("namespace", namespace).Error("list requests")
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to list requests")
 	}
 
-	filtered := applyRequestFilters(requests, filters)
-	responses := make([]requestResponse, 0, len(filtered))
-	for _, req := range filtered {
+	responses := make([]requestResponse, 0, len(requests))
+	for _, req := range requests {
 		response, err := buildRequestResponse(c.Context(), store, req)
 		if err != nil {
 			logrus.WithError(err).WithField("namespace", namespace).WithField("request_id", req.ID).Error("prepare request response")
@@ -351,12 +350,7 @@ func (h requestHandler) delete(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-type requestListFilters struct {
-	HasGrant *bool
-	Labels   map[string]string
-}
-
-func loggableRequestFilters(filters requestListFilters) map[string]any {
+func loggableRequestFilters(filters storage.RequestListFilters) map[string]any {
 	entry := map[string]any{}
 	if filters.HasGrant != nil {
 		entry["has_grant"] = *filters.HasGrant
@@ -370,23 +364,23 @@ func loggableRequestFilters(filters requestListFilters) map[string]any {
 	return entry
 }
 
-func parseRequestListFilters(c *fiber.Ctx) (requestListFilters, error) {
+func parseRequestListFilters(c *fiber.Ctx) (storage.RequestListFilters, error) {
 	query, err := url.ParseQuery(string(c.Context().URI().QueryString()))
 	if err != nil {
-		return requestListFilters{}, fiber.NewError(fiber.StatusBadRequest, "invalid query parameters")
+		return storage.RequestListFilters{}, fiber.NewError(fiber.StatusBadRequest, "invalid query parameters")
 	}
 
-	filters := requestListFilters{}
+	filters := storage.RequestListFilters{}
 	if raw := query.Get("has_grant"); raw != "" {
 		value, err := strconv.ParseBool(raw)
 		if err != nil {
-			return requestListFilters{}, fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("invalid has_grant %q", raw))
+			return storage.RequestListFilters{}, fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("invalid has_grant %q", raw))
 		}
 		filters.HasGrant = &value
 	}
 
 	if filters.Labels, err = parseLabelFilters(query); err != nil {
-		return requestListFilters{}, err
+		return storage.RequestListFilters{}, err
 	}
 
 	return filters, nil
@@ -409,7 +403,7 @@ func parseLabelFilters(query url.Values) (map[string]string, error) {
 	return nil, nil
 }
 
-func applyRequestFilters(requests []storage.Request, filters requestListFilters) []storage.Request {
+func applyRequestFilters(requests []storage.Request, filters storage.RequestListFilters) []storage.Request {
 	var filtered []storage.Request
 	for _, req := range requests {
 		if filters.HasGrant != nil && req.HasGrant != *filters.HasGrant {
@@ -536,10 +530,6 @@ type registerUpdatePayload struct {
 	Labels *map[string]string `json:"labels"`
 }
 
-type registerListFilters struct {
-	Labels map[string]string
-}
-
 func (h registerHandler) create(c *fiber.Ctx) error {
 	var payload registerCreatePayload
 	if err := c.BodyParser(&payload); err != nil {
@@ -600,14 +590,13 @@ func (h registerHandler) list(c *fiber.Ctx) error {
 		return err
 	}
 
-	registers, err := store.ListRegisters(c.Context())
+	registers, err := store.ListRegisters(c.Context(), &filters)
 	if err != nil {
 		logrus.WithError(err).WithField("namespace", namespace).Error("list registers")
 		return fiber.NewError(fiber.StatusInternalServerError, "unable to list registers")
 	}
 
-	filtered := applyRegisterFilters(registers, filters)
-	return c.JSON(filtered)
+	return c.JSON(registers)
 }
 
 func (h registerHandler) get(c *fiber.Ctx) error {
@@ -690,19 +679,19 @@ func (h registerHandler) delete(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-func parseRegisterListFilters(c *fiber.Ctx) (registerListFilters, error) {
+func parseRegisterListFilters(c *fiber.Ctx) (storage.RegisterListFilters, error) {
 	query, err := url.ParseQuery(string(c.Context().URI().QueryString()))
 	if err != nil {
-		return registerListFilters{}, fiber.NewError(fiber.StatusBadRequest, "invalid query parameters")
+		return storage.RegisterListFilters{}, fiber.NewError(fiber.StatusBadRequest, "invalid query parameters")
 	}
-	filters := registerListFilters{}
+	filters := storage.RegisterListFilters{}
 	if filters.Labels, err = parseLabelFilters(query); err != nil {
-		return registerListFilters{}, err
+		return storage.RegisterListFilters{}, err
 	}
 	return filters, nil
 }
 
-func applyRegisterFilters(registers []storage.Register, filters registerListFilters) []storage.Register {
+func applyRegisterFilters(registers []storage.Register, filters storage.RegisterListFilters) []storage.Register {
 	var filtered []storage.Register
 	for _, reg := range registers {
 		if !matchesLabelFilters(reg.Labels, filters.Labels) {

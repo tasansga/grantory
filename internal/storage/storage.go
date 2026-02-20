@@ -524,6 +524,12 @@ type Request struct {
 	UpdatedAt time.Time         `json:"updated_at"`
 }
 
+// RequestListFilters describes optional filters for listing requests.
+type RequestListFilters struct {
+	HasGrant *bool
+	Labels   map[string]string
+}
+
 // Register describes the persisted state for register entries.
 type Register struct {
 	ID        string            `json:"id"`
@@ -532,6 +538,11 @@ type Register struct {
 	Labels    map[string]string `json:"labels,omitempty"`
 	CreatedAt time.Time         `json:"created_at"`
 	UpdatedAt time.Time         `json:"updated_at"`
+}
+
+// RegisterListFilters describes optional filters for listing registers.
+type RegisterListFilters struct {
+	Labels map[string]string
 }
 
 // CreateRequest inserts a new request record into storage.
@@ -616,21 +627,55 @@ WHERE id = ?
 	return req, nil
 }
 
-// ListRequests returns every stored request ordered by creation time.
-func (s *Store) ListRequests(ctx context.Context) ([]Request, error) {
+// ListRequests returns stored requests ordered by creation time.
+func (s *Store) ListRequests(ctx context.Context, filters *RequestListFilters) ([]Request, error) {
 	if s == nil || s.db == nil {
 		return nil, fmt.Errorf("store not initialized")
 	}
 
-	s.logDBOperation("requests", "list", nil)
+	var logFields logrus.Fields
+	if filters != nil {
+		if filters.HasGrant != nil {
+			logFields = logrus.Fields{"has_grant": *filters.HasGrant}
+		}
+		if len(filters.Labels) > 0 {
+			if logFields == nil {
+				logFields = logrus.Fields{}
+			}
+			logFields["labels"] = filters.Labels
+		}
+	}
+	s.logDBOperation("requests", "list", logFields)
 
-	rows, err := s.db.QueryContext(ctx, `
+	query := strings.Builder{}
+	query.WriteString(`
 SELECT id, host_id, data,
        CASE WHEN EXISTS (SELECT 1 FROM grants WHERE request_id = requests.id) THEN 1 ELSE 0 END AS has_grant,
        created_at, updated_at
-FROM requests
-ORDER BY created_at ASC
-`)
+FROM requests`)
+
+	var args []any
+	var where []string
+	if filters != nil {
+		if filters.HasGrant != nil {
+			if *filters.HasGrant {
+				where = append(where, "EXISTS (SELECT 1 FROM grants WHERE request_id = requests.id)")
+			} else {
+				where = append(where, "NOT EXISTS (SELECT 1 FROM grants WHERE request_id = requests.id)")
+			}
+		}
+		for key, value := range filters.Labels {
+			where = append(where, "EXISTS (SELECT 1 FROM request_labels WHERE request_id = requests.id AND key = ? AND value = ?)")
+			args = append(args, key, value)
+		}
+	}
+	if len(where) > 0 {
+		query.WriteString(" WHERE ")
+		query.WriteString(strings.Join(where, " AND "))
+	}
+	query.WriteString(" ORDER BY created_at ASC")
+
+	rows, err := s.db.QueryContext(ctx, query.String(), args...)
 	if err != nil {
 		return nil, fmt.Errorf("query requests: %w", err)
 	}
@@ -829,19 +874,38 @@ WHERE id = ?
 	return reg, nil
 }
 
-// ListRegisters returns every stored register ordered by creation time.
-func (s *Store) ListRegisters(ctx context.Context) ([]Register, error) {
+// ListRegisters returns stored registers ordered by creation time.
+func (s *Store) ListRegisters(ctx context.Context, filters *RegisterListFilters) ([]Register, error) {
 	if s == nil || s.db == nil {
 		return nil, fmt.Errorf("store not initialized")
 	}
 
-	s.logDBOperation("registers", "list", nil)
+	var logFields logrus.Fields
+	if filters != nil && len(filters.Labels) > 0 {
+		logFields = logrus.Fields{"labels": filters.Labels}
+	}
+	s.logDBOperation("registers", "list", logFields)
 
-	rows, err := s.db.QueryContext(ctx, `
+	query := strings.Builder{}
+	query.WriteString(`
 SELECT id, host_id, data, created_at, updated_at
-FROM registers
-ORDER BY created_at ASC
-`)
+FROM registers`)
+
+	var args []any
+	var where []string
+	if filters != nil {
+		for key, value := range filters.Labels {
+			where = append(where, "EXISTS (SELECT 1 FROM register_labels WHERE register_id = registers.id AND key = ? AND value = ?)")
+			args = append(args, key, value)
+		}
+	}
+	if len(where) > 0 {
+		query.WriteString(" WHERE ")
+		query.WriteString(strings.Join(where, " AND "))
+	}
+	query.WriteString(" ORDER BY created_at ASC")
+
+	rows, err := s.db.QueryContext(ctx, query.String(), args...)
 	if err != nil {
 		return nil, fmt.Errorf("query registers: %w", err)
 	}

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -18,8 +19,8 @@ import (
 
 type cliBackend interface {
 	ListHosts(context.Context) ([]storage.Host, error)
-	ListRequests(context.Context) ([]storage.Request, error)
-	ListRegisters(context.Context) ([]storage.Register, error)
+	ListRequests(context.Context, *storage.RequestListFilters) ([]storage.Request, error)
+	ListRegisters(context.Context, *storage.RegisterListFilters) ([]storage.Register, error)
 	ListGrants(context.Context) ([]storage.Grant, error)
 	GetHost(context.Context, string) (storage.Host, error)
 	GetRequest(context.Context, string) (storage.Request, error)
@@ -133,13 +134,13 @@ func (d *directBackend) ListHosts(ctx context.Context) ([]storage.Host, error) {
 }
 
 //go:noinline
-func (d *directBackend) ListRequests(ctx context.Context) ([]storage.Request, error) {
-	return d.store.ListRequests(ctx)
+func (d *directBackend) ListRequests(ctx context.Context, filters *storage.RequestListFilters) ([]storage.Request, error) {
+	return d.store.ListRequests(ctx, filters)
 }
 
 //go:noinline
-func (d *directBackend) ListRegisters(ctx context.Context) ([]storage.Register, error) {
-	return d.store.ListRegisters(ctx)
+func (d *directBackend) ListRegisters(ctx context.Context, filters *storage.RegisterListFilters) ([]storage.Register, error) {
+	return d.store.ListRegisters(ctx, filters)
 }
 
 //go:noinline
@@ -245,18 +246,26 @@ func (a *apiBackend) ListHosts(ctx context.Context) ([]storage.Host, error) {
 }
 
 //go:noinline
-func (a *apiBackend) ListRequests(ctx context.Context) ([]storage.Request, error) {
+func (a *apiBackend) ListRequests(ctx context.Context, filters *storage.RequestListFilters) ([]storage.Request, error) {
 	var requests []storage.Request
-	if err := a.doJSON(ctx, http.MethodGet, "/requests", nil, &requests); err != nil {
+	endpoint, err := appendRequestListFilters("/requests", filters)
+	if err != nil {
+		return nil, err
+	}
+	if err := a.doJSON(ctx, http.MethodGet, endpoint, nil, &requests); err != nil {
 		return nil, err
 	}
 	return requests, nil
 }
 
 //go:noinline
-func (a *apiBackend) ListRegisters(ctx context.Context) ([]storage.Register, error) {
+func (a *apiBackend) ListRegisters(ctx context.Context, filters *storage.RegisterListFilters) ([]storage.Register, error) {
 	var registers []storage.Register
-	if err := a.doJSON(ctx, http.MethodGet, "/registers", nil, &registers); err != nil {
+	endpoint, err := appendRegisterListFilters("/registers", filters)
+	if err != nil {
+		return nil, err
+	}
+	if err := a.doJSON(ctx, http.MethodGet, endpoint, nil, &registers); err != nil {
 		return nil, err
 	}
 	return registers, nil
@@ -338,6 +347,37 @@ func (a *apiBackend) UpdateRequestLabels(ctx context.Context, id string, labels 
 
 func (a *apiBackend) UpdateRegisterLabels(ctx context.Context, id string, labels map[string]string) error {
 	return a.doJSON(ctx, http.MethodPatch, fmt.Sprintf("/registers/%s", id), labelsPayload{Labels: labels}, nil)
+}
+
+func appendRequestListFilters(endpoint string, filters *storage.RequestListFilters) (string, error) {
+	if filters == nil {
+		return endpoint, nil
+	}
+	params := url.Values{}
+	if filters.HasGrant != nil {
+		params.Set("has_grant", strconv.FormatBool(*filters.HasGrant))
+	}
+	for key, value := range filters.Labels {
+		params.Add("label", fmt.Sprintf("%s=%s", key, value))
+	}
+	if encoded := params.Encode(); encoded != "" {
+		endpoint = endpoint + "?" + encoded
+	}
+	return endpoint, nil
+}
+
+func appendRegisterListFilters(endpoint string, filters *storage.RegisterListFilters) (string, error) {
+	if filters == nil {
+		return endpoint, nil
+	}
+	params := url.Values{}
+	for key, value := range filters.Labels {
+		params.Add("label", fmt.Sprintf("%s=%s", key, value))
+	}
+	if encoded := params.Encode(); encoded != "" {
+		endpoint = endpoint + "?" + encoded
+	}
+	return endpoint, nil
 }
 
 func (a *apiBackend) doJSON(ctx context.Context, method, endpoint string, body any, resp any) error {

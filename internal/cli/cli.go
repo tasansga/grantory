@@ -101,13 +101,13 @@ func newListCmd() *cobra.Command {
 					}
 					return outputJSON(hosts)
 				case resourceTypeRequests:
-					requests, err := backend.ListRequests(ctx)
+					requests, err := backend.ListRequests(ctx, nil)
 					if err != nil {
 						return err
 					}
 					return outputJSON(requests)
 				case resourceTypeRegisters:
-					registers, err := backend.ListRegisters(ctx)
+					registers, err := backend.ListRegisters(ctx, nil)
 					if err != nil {
 						return err
 					}
