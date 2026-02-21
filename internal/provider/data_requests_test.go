@@ -55,6 +55,29 @@ func TestDataRequestsSource(t *testing.T) {
 	assert.Equal(t, "true", query.Get("has_grant"), "expected has_grant query")
 }
 
+func TestDataRequestsSourceHasGrantFalse(t *testing.T) {
+	t.Parallel()
+
+	handler := newRequestsDataSourceTestHandler()
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	client := &grantoryClient{
+		baseURL:    mustParseURL(t, server.URL),
+		httpClient: server.Client(),
+	}
+
+	resource := dataRequests()
+	data := schema.TestResourceDataRaw(t, resource.Schema, map[string]any{
+		"has_grant": false,
+	})
+
+	assert.False(t, resource.ReadContext(context.Background(), data, client).HasError(), "unexpected diagnostics from requests data read")
+
+	query := handler.lastQuery()
+	assert.Equal(t, "false", query.Get("has_grant"), "expected has_grant=false query")
+}
+
 func TestDataRequestsSourceNoFilters(t *testing.T) {
 	t.Parallel()
 

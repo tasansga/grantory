@@ -63,7 +63,7 @@ func dataRequestsRead(ctx context.Context, d *schema.ResourceData, meta any) dia
 		Labels:     expandStringMap(extractMap(d.Get("labels"))),
 		HostLabels: expandStringMap(extractMap(d.Get("host_labels"))),
 	}
-	if raw, ok := d.GetOk("has_grant"); ok {
+	if raw, ok := d.GetOkExists("has_grant"); ok {
 		value := raw.(bool)
 		opts.HasGrant = &value
 	}
