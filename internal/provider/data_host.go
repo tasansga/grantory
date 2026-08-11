@@ -11,14 +11,17 @@ func dataHost() *schema.Resource {
 	return &schema.Resource{
 		Schema: map[string]*schema.Schema{
 			"host_id": {
-				Type:        schema.TypeString,
-				Required:    true,
-				Description: "Identifier of the host to fetch.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				ExactlyOneOf: []string{"host_id", "unique_key"},
+				Description:  "Identifier of the host to fetch.",
 			},
 			"unique_key": {
-				Type:        schema.TypeString,
-				Computed:    true,
-				Description: "Unique key used to enforce host uniqueness within a namespace.",
+				Type:         schema.TypeString,
+				Optional:     true,
+				Computed:     true,
+				ExactlyOneOf: []string{"host_id", "unique_key"},
+				Description:  "Unique key used to enforce host uniqueness within a namespace.",
 			},
 			"public_key": {
 				Type:        schema.TypeString,
@@ -42,20 +45,49 @@ func dataHost() *schema.Resource {
 func dataHostRead(ctx context.Context, d *schema.ResourceData, meta any) diag.Diagnostics {
 	client := meta.(*grantoryClient)
 	hostID := d.Get("host_id").(string)
-	if hostID == "" {
+	uniqueKey := d.Get("unique_key").(string)
+
+	if hostID == "" && uniqueKey == "" {
 		return diag.Diagnostics{{
 			Severity: diag.Error,
-			Summary:  "host_id is required",
+			Summary:  "either host_id or unique_key must be specified",
+		}}
+	}
+	if hostID != "" && uniqueKey != "" {
+		return diag.Diagnostics{{
+			Severity: diag.Error,
+			Summary:  "cannot specify both host_id and unique_key",
 		}}
 	}
 
-	host, err := client.GetHost(ctx, hostID)
-	if err != nil {
-		if isNotFound(err) {
+	var host apiHost
+	if hostID != "" {
+		var err error
+		host, err = client.GetHost(ctx, hostID)
+		if err != nil {
+			if isNotFound(err) {
+				d.SetId("")
+				return nil
+			}
+			return diag.FromErr(err)
+		}
+	} else {
+		hosts, err := client.ListHosts(ctx)
+		if err != nil {
+			return diag.FromErr(err)
+		}
+		found := false
+		for _, h := range hosts {
+			if h.UniqueKey == uniqueKey {
+				host = h
+				found = true
+				break
+			}
+		}
+		if !found {
 			d.SetId("")
 			return nil
 		}
-		return diag.FromErr(err)
 	}
 
 	d.SetId(host.ID)
