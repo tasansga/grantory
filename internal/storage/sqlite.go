@@ -830,7 +830,7 @@ func (s *sqliteStore) RecordSignature(ctx context.Context, hostID string, timest
 		return fmt.Errorf("fetch last timestamp: %w", err)
 	}
 
-	if lastTs.Valid && timestamp < lastTs.Int64 {
+	if lastTs.Valid && timestamp < (lastTs.Int64-SignatureTimestampGracePeriodSeconds) {
 		return ErrTimestampRegressed
 	}
 
@@ -843,10 +843,12 @@ func (s *sqliteStore) RecordSignature(ctx context.Context, hostID string, timest
 		return fmt.Errorf("insert nonce: %w", err)
 	}
 
-	// 3. Update host timestamp
-	_, err = tx.ExecContext(ctx, `UPDATE hosts SET last_signature_timestamp = ? WHERE id = ?`, timestamp, hostID)
-	if err != nil {
-		return fmt.Errorf("update last timestamp: %w", err)
+	// 3. Update host timestamp (only advance if incoming timestamp is newer)
+	if !lastTs.Valid || timestamp > lastTs.Int64 {
+		_, err = tx.ExecContext(ctx, `UPDATE hosts SET last_signature_timestamp = ? WHERE id = ?`, timestamp, hostID)
+		if err != nil {
+			return fmt.Errorf("update last timestamp: %w", err)
+		}
 	}
 
 	// 4. Cleanup expired nonces (occasional)

@@ -176,11 +176,17 @@ var (
 	// ErrSchemaDefinitionUniqueKeyConflict is returned when a schema definition with the same unique key exists.
 	ErrSchemaDefinitionUniqueKeyConflict = errors.New("schema definition unique key already exists")
 	// ErrReferencedHostNotFound is returned when a request/register refers to a host that does not exist.
-	ErrReferencedHostNotFound = errors.New("referenced host not found")
+	ErrReferencedHostNotFound    = errors.New("referenced host not found")
 	ErrReferencedRequestNotFound = errors.New("referenced request not found")
 
 	// ErrReplayDetected is returned when a nonce is reused for the same host.
 	ErrReplayDetected = errors.New("replay detected")
 	// ErrTimestampRegressed is returned when a signature timestamp is older than the last recorded one.
 	ErrTimestampRegressed = errors.New("timestamp regressed")
+)
+
+const (
+	// SignatureTimestampGracePeriodSeconds defines the grace period (in seconds) allowed
+	// for out-of-order request timestamps from the same host to accommodate concurrency and network jitter.
+	SignatureTimestampGracePeriodSeconds int64 = 30
 )
