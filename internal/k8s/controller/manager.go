@@ -64,7 +64,7 @@ func Start(ctx context.Context, opts Options) error {
 		return fmt.Errorf("add ready check: %w", err)
 	}
 
-	recorder := manager.GetEventRecorderFor("grantory-controller")
+	recorder := manager.GetEventRecorder("grantory-controller")
 	if err := (&GrantoryHostReconciler{
 		Client:            manager.GetClient(),
 		Scheme:            manager.GetScheme(),

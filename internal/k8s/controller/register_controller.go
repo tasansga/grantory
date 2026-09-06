@@ -7,7 +7,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -18,7 +18,7 @@ import (
 type GrantoryRegisterReconciler struct {
 	client.Client
 	Scheme            *runtime.Scheme
-	Recorder          record.EventRecorder
+	Recorder          events.EventRecorder
 	GrantoryClient    *apiclient.Client
 	GrantoryNamespace string
 }
@@ -60,7 +60,7 @@ func (r *GrantoryRegisterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		_ = updateRegisterStatus(ctx, r.Client, &register, status)
 		return ctrl.Result{}, err
 	}
-	if result.Requeue || result.RequeueAfter > 0 {
+	if result.RequeueAfter > 0 {
 		status := register.Status
 		status.ObservedGeneration = register.Generation
 		status.Conditions = setReadyCondition(status.Conditions, metav1.ConditionFalse, "WaitingForHost", "Waiting for referenced host", register.Generation)
@@ -96,13 +96,13 @@ func (r *GrantoryRegisterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			status.Conditions = setReadyCondition(status.Conditions, metav1.ConditionFalse, "CreateFailed", err.Error(), register.Generation)
 			_ = updateRegisterStatus(ctx, r.Client, &register, status)
 			if r.Recorder != nil {
-				r.Recorder.Event(&register, "Warning", "CreateFailed", err.Error())
+				r.Recorder.Eventf(&register, nil, "Warning", "CreateFailed", "Create", "%s", err.Error())
 			}
 			return ctrl.Result{}, err
 		}
 		remoteID = created.ID
 		if r.Recorder != nil {
-			r.Recorder.Eventf(&register, "Normal", "Created", "Created Grantory register %s", created.ID)
+			r.Recorder.Eventf(&register, nil, "Normal", "Created", "Create", "Created Grantory register %s", created.ID)
 		}
 	} else {
 		remoteID = register.Status.ID
@@ -119,7 +119,7 @@ func (r *GrantoryRegisterReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			status.Conditions = setReadyCondition(status.Conditions, metav1.ConditionFalse, "UpdateFailed", err.Error(), register.Generation)
 			_ = updateRegisterStatus(ctx, r.Client, &register, status)
 			if r.Recorder != nil {
-				r.Recorder.Event(&register, "Warning", "UpdateFailed", err.Error())
+				r.Recorder.Eventf(&register, nil, "Warning", "UpdateFailed", "Update", "%s", err.Error())
 			}
 			return ctrl.Result{}, err
 		}
