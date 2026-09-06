@@ -13,7 +13,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -27,7 +27,7 @@ const noGrantRequeueDelay = 10 * time.Second
 type GrantoryRequestReconciler struct {
 	client.Client
 	Scheme            *runtime.Scheme
-	Recorder          record.EventRecorder
+	Recorder          events.EventRecorder
 	GrantoryClient    *apiclient.Client
 	GrantoryNamespace string
 }
@@ -69,7 +69,7 @@ func (r *GrantoryRequestReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		_ = updateRequestStatus(ctx, r.Client, &request, status)
 		return ctrl.Result{}, err
 	}
-	if result.Requeue || result.RequeueAfter > 0 {
+	if result.RequeueAfter > 0 {
 		status := request.Status
 		status.ObservedGeneration = request.Generation
 		status.Conditions = setReadyCondition(status.Conditions, metav1.ConditionFalse, "WaitingForHost", "Waiting for referenced host", request.Generation)
@@ -101,13 +101,13 @@ func (r *GrantoryRequestReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			status.Conditions = setReadyCondition(status.Conditions, metav1.ConditionFalse, "CreateFailed", err.Error(), request.Generation)
 			_ = updateRequestStatus(ctx, r.Client, &request, status)
 			if r.Recorder != nil {
-				r.Recorder.Event(&request, "Warning", "CreateFailed", err.Error())
+				r.Recorder.Eventf(&request, nil, "Warning", "CreateFailed", "Create", "%s", err.Error())
 			}
 			return ctrl.Result{}, err
 		}
 		response = created
 		if r.Recorder != nil {
-			r.Recorder.Eventf(&request, "Normal", "Created", "Created Grantory request %s", created.ID)
+			r.Recorder.Eventf(&request, nil, "Normal", "Created", "Create", "Created Grantory request %s", created.ID)
 		}
 	} else {
 		labels := request.Spec.Labels
@@ -128,7 +128,7 @@ func (r *GrantoryRequestReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			status.Conditions = setReadyCondition(status.Conditions, metav1.ConditionFalse, "UpdateFailed", err.Error(), request.Generation)
 			_ = updateRequestStatus(ctx, r.Client, &request, status)
 			if r.Recorder != nil {
-				r.Recorder.Event(&request, "Warning", "UpdateFailed", err.Error())
+				r.Recorder.Eventf(&request, nil, "Warning", "UpdateFailed", "Update", "%s", err.Error())
 			}
 			return ctrl.Result{}, err
 		}
@@ -144,7 +144,7 @@ func (r *GrantoryRequestReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		status.ObservedGeneration = request.Generation
 		status.Conditions = setReadyCondition(status.Conditions, metav1.ConditionFalse, "SpecChanged", "Request spec changed, recreating", request.Generation)
 		_ = updateRequestStatus(ctx, r.Client, &request, status)
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Second}, nil
 	}
 
 	status := request.Status

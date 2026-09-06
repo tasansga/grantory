@@ -8,7 +8,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -19,7 +19,7 @@ import (
 type GrantoryHostReconciler struct {
 	client.Client
 	Scheme            *runtime.Scheme
-	Recorder          record.EventRecorder
+	Recorder          events.EventRecorder
 	GrantoryClient    *apiclient.Client
 	GrantoryNamespace string
 }
@@ -87,13 +87,13 @@ func (r *GrantoryHostReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			status.Conditions = setReadyCondition(status.Conditions, metav1.ConditionFalse, "CreateFailed", err.Error(), host.Generation)
 			_ = updateHostStatus(ctx, r.Client, &host, status)
 			if r.Recorder != nil {
-				r.Recorder.Event(&host, "Warning", "CreateFailed", err.Error())
+				r.Recorder.Eventf(&host, nil, "Warning", "CreateFailed", "Create", "%s", err.Error())
 			}
 			return ctrl.Result{}, err
 		}
 		remoteID = created.ID
 		if r.Recorder != nil {
-			r.Recorder.Eventf(&host, "Normal", "Created", "Created Grantory host %s", created.ID)
+			r.Recorder.Eventf(&host, nil, "Normal", "Created", "Create", "Created Grantory host %s", created.ID)
 		}
 	} else {
 		remoteID = host.Status.ID
@@ -107,7 +107,7 @@ func (r *GrantoryHostReconciler) Reconcile(ctx context.Context, req ctrl.Request
 			status.Conditions = setReadyCondition(status.Conditions, metav1.ConditionFalse, "UpdateFailed", err.Error(), host.Generation)
 			_ = updateHostStatus(ctx, r.Client, &host, status)
 			if r.Recorder != nil {
-				r.Recorder.Event(&host, "Warning", "UpdateFailed", err.Error())
+				r.Recorder.Eventf(&host, nil, "Warning", "UpdateFailed", "Update", "%s", err.Error())
 			}
 			return ctrl.Result{}, err
 		}
