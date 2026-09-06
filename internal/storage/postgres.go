@@ -703,7 +703,7 @@ func (s *postgresStore) RecordSignature(ctx context.Context, hostID string, time
 		return fmt.Errorf("fetch last timestamp: %w", err)
 	}
 
-	if lastTs.Valid && timestamp < lastTs.Int64 {
+	if lastTs.Valid && timestamp < (lastTs.Int64-SignatureTimestampGracePeriodSeconds) {
 		return ErrTimestampRegressed
 	}
 
@@ -716,10 +716,12 @@ func (s *postgresStore) RecordSignature(ctx context.Context, hostID string, time
 		return fmt.Errorf("insert nonce: %w", err)
 	}
 
-	// 3. Update host timestamp
-	stmt = fmt.Sprintf(`UPDATE %s SET last_signature_timestamp = $1 WHERE id = $2`, s.table("hosts"))
-	if _, err = tx.ExecContext(ctx, stmt, timestamp, hostID); err != nil {
-		return fmt.Errorf("update last timestamp: %w", err)
+	// 3. Update host timestamp (only advance if incoming timestamp is newer)
+	if !lastTs.Valid || timestamp > lastTs.Int64 {
+		stmt = fmt.Sprintf(`UPDATE %s SET last_signature_timestamp = $1 WHERE id = $2`, s.table("hosts"))
+		if _, err = tx.ExecContext(ctx, stmt, timestamp, hostID); err != nil {
+			return fmt.Errorf("update last timestamp: %w", err)
+		}
 	}
 
 	// 4. Cleanup expired nonces (occasional)

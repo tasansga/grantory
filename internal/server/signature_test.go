@@ -284,6 +284,9 @@ func TestNonceReuse(t *testing.T) {
 	assert.Contains(t, string(body), "replay detected")
 }
 
+// TestTimestampMonotonicity verifies that incoming request timestamps must be monotonic
+// within a 30-second grace window to accommodate concurrent requests, and that the stored
+// timestamp only advances forward.
 func TestTimestampMonotonicity(t *testing.T) {
 	t.Parallel()
 
@@ -319,16 +322,28 @@ func TestTimestampMonotonicity(t *testing.T) {
 	res = sendTestRequestRaw(t, app, http.MethodPost, "/requests", headers1, bodyBytes)
 	assert.Equal(t, http.StatusCreated, res.StatusCode)
 
-	// Second request at 'now - 10' - fail
-	oldTs := fmt.Sprintf("%d", now-10)
+	// Second request at 'now - 10' (within 30s grace window) - should succeed
+	inGraceTs := fmt.Sprintf("%d", now-10)
 	nonce2 := "nonce2"
-	sig2Base64 := sign(priv, oldTs, nonce2, http.MethodPost, "/requests", string(bodyBytes))
+	sig2Base64 := sign(priv, inGraceTs, nonce2, http.MethodPost, "/requests", string(bodyBytes))
 	headers2 := map[string]string{
-		"X-Grantory-Timestamp": oldTs,
+		"X-Grantory-Timestamp": inGraceTs,
 		"X-Grantory-Nonce":     nonce2,
 		"X-Grantory-Signature": sig2Base64,
 	}
 	res = sendTestRequestRaw(t, app, http.MethodPost, "/requests", headers2, bodyBytes)
+	assert.Equal(t, http.StatusCreated, res.StatusCode)
+
+	// Third request at 'now - 35' (beyond 30s grace window) - should fail with timestamp regressed
+	oldTs := fmt.Sprintf("%d", now-35)
+	nonce3 := "nonce3"
+	sig3Base64 := sign(priv, oldTs, nonce3, http.MethodPost, "/requests", string(bodyBytes))
+	headers3 := map[string]string{
+		"X-Grantory-Timestamp": oldTs,
+		"X-Grantory-Nonce":     nonce3,
+		"X-Grantory-Signature": sig3Base64,
+	}
+	res = sendTestRequestRaw(t, app, http.MethodPost, "/requests", headers3, bodyBytes)
 	assert.Equal(t, http.StatusUnauthorized, res.StatusCode)
 	body, _ := io.ReadAll(res.Body)
 	assert.Contains(t, string(body), "timestamp regressed")
